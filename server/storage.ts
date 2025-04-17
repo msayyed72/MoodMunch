@@ -63,7 +63,7 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
   
   // ID counters
   private userId: number;
@@ -660,7 +660,7 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 
   constructor() {
     const PostgresSessionStore = connectPg(session);
@@ -734,7 +734,7 @@ export class DatabaseStorage implements IStorage {
     return db.select()
       .from(restaurants)
       .where(
-        restaurantIds.map(id => eq(restaurants.id, id)).reduce((a, b) => ({ ...a, or: b }))
+        or(...restaurantIds.map(id => eq(restaurants.id, id)))
       );
   }
 
@@ -772,14 +772,14 @@ export class DatabaseStorage implements IStorage {
     return db.select()
       .from(orders)
       .where(eq(orders.userId, userId))
-      .orderBy(orders.createdAt, 'desc');
+      .orderBy(orders.id, 'desc');
   }
 
   async getLatestOrderByUser(userId: number): Promise<Order | undefined> {
     const [order] = await db.select()
       .from(orders)
       .where(eq(orders.userId, userId))
-      .orderBy(orders.createdAt, 'desc')
+      .orderBy(orders.id, 'desc')
       .limit(1);
     
     return order;
