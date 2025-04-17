@@ -38,6 +38,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const TAX_RATE = 0.08;
   const BASE_DELIVERY_FEE = 2.99;
 
+  if (!items) {
+    setItems([]);
+  }
+
   const addItem = (item: CartItem) => {
     setItems(prev => {
       const existingItem = prev.find(i => i.menuItemId === item.menuItemId);

@@ -15,7 +15,7 @@ import { useLocation } from "@/context/LocationContext";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
-  const { cartItems, toggleCart } = useCart();
+  const { items: cartItems, toggleCart } = useCart();
   const [, navigate] = useWouterLocation();
 
   const handleLogout = () => {
