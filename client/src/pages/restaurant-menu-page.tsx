@@ -1,17 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation, useRoute } from "wouter";
+import { useLocation as useWouterLocation, useRoute } from "wouter";
 import { Restaurant, MenuItem } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Star } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useLocation } from "@/context/LocationContext";
+import { Badge } from "@/components/ui/badge";
 
 export default function RestaurantMenuPage() {
-  const [, navigate] = useLocation();
+  const [, navigate] = useWouterLocation();
   const [match, params] = useRoute("/restaurant/:id");
   const restaurantId = match ? parseInt(params.id) : null;
   const { addToCart } = useCart();
+  const locationContext = useLocation();
+  const { formatPrice, userLocation } = locationContext;
 
   const { data: restaurant, isLoading: isLoadingRestaurant } = useQuery<Restaurant>({
     queryKey: ["/api/restaurants", restaurantId],
@@ -125,15 +129,26 @@ export default function RestaurantMenuPage() {
                     )) || null}
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="text-gray-700 opacity-70 h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <div className="flex space-x-4 flex-wrap">
+                  <div className="flex items-center mr-3 mt-2">
+                    <Clock className="text-gray-700 opacity-70 h-4 w-4 mr-1" />
                     <span className="text-sm text-gray-700">{restaurant?.deliveryTime}</span>
                   </div>
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="text-gray-700 opacity-70 h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1"></path><path d="M8 12h8"></path><circle cx="8" cy="20" r="1"></circle><circle cx="16" cy="20" r="1"></circle><path d="M16 8 18 12 21 11 19 17 13 17 14 16"></path><path d="m9 8 1 8"></path><path d="M4 9h5"></path></svg>
-                    <span className="text-sm text-gray-700">{restaurant?.deliveryFee} delivery</span>
+                  <div className="flex items-center mr-3 mt-2">
+                    <Truck className="text-gray-700 opacity-70 h-4 w-4 mr-1" />
+                    <span className="text-sm text-gray-700">{formatPrice(restaurant?.deliveryFee || "0")} delivery</span>
                   </div>
+                  <div className="flex items-center mt-2">
+                    <MapPin className="text-gray-700 opacity-70 h-4 w-4 mr-1" />
+                    <span className="text-sm text-gray-700">
+                      {restaurant?.city || "New York"}, {restaurant?.country || "United States"}
+                    </span>
+                  </div>
+                  {restaurant?.currency && restaurant?.currency !== "USD" && (
+                    <Badge variant="outline" className="ml-auto mt-2">
+                      Prices shown in {userLocation.currencySymbol} ({userLocation.currency})
+                    </Badge>
+                  )}
                 </div>
               </div>
               <p className="text-gray-700 opacity-70">{restaurant?.description}</p>
@@ -187,7 +202,7 @@ export default function RestaurantMenuPage() {
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-1">
                     <h4 className="font-medium text-gray-800">{item.name}</h4>
-                    <span className="font-medium text-gray-800">${parseFloat(item.price).toFixed(2)}</span>
+                    <span className="font-medium text-gray-800">{formatPrice(item.price)}</span>
                   </div>
                   <p className="text-sm text-gray-700 opacity-70 mb-3">{item.description}</p>
                   <Button 
