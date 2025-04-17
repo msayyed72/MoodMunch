@@ -15,11 +15,27 @@ export default function RestaurantMenuPage() {
 
   const { data: restaurant, isLoading: isLoadingRestaurant } = useQuery<Restaurant>({
     queryKey: ["/api/restaurants", restaurantId],
+    queryFn: async () => {
+      if (!restaurantId) return null;
+      const response = await fetch(`/api/restaurants/${restaurantId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch restaurant');
+      }
+      return response.json();
+    },
     enabled: !!restaurantId,
   });
 
   const { data: menuItems, isLoading: isLoadingMenu, error } = useQuery<MenuItem[]>({
     queryKey: ["/api/restaurants", restaurantId, "menu"],
+    queryFn: async () => {
+      if (!restaurantId) return [];
+      const response = await fetch(`/api/restaurants/${restaurantId}/menu`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch menu items');
+      }
+      return response.json();
+    },
     enabled: !!restaurantId,
   });
 
@@ -102,11 +118,11 @@ export default function RestaurantMenuPage() {
                     <span className="text-sm text-gray-700 opacity-70">({restaurant?.reviewCount} reviews)</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {restaurant?.cuisines.map((cuisine, index) => (
+                    {restaurant?.cuisines?.map((cuisine, index) => (
                       <span key={index} className="bg-gray-200 text-gray-800 text-xs py-1 px-3 rounded-full">
                         {cuisine}
                       </span>
-                    ))}
+                    )) || null}
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
