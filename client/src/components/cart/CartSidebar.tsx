@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function CartSidebar() {
   const { 
-    cartItems, 
+    items, 
     removeFromCart, 
     incrementItem, 
     decrementItem,
@@ -33,7 +33,7 @@ export default function CartSidebar() {
       navigate("/auth");
       return;
     }
-    
+
     closeCart();
     navigate("/checkout");
   };
@@ -51,9 +51,9 @@ export default function CartSidebar() {
             <X className="h-5 w-5 text-gray-700" />
           </button>
         </div>
-        
+
         <div className="flex-grow overflow-y-auto p-4">
-          {cartItems.length === 0 ? (
+          {items.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShoppingCart className="h-8 w-8 text-gray-500" />
@@ -73,10 +73,10 @@ export default function CartSidebar() {
           ) : (
             <div>
               <div className="mb-6">
-                <h4 className="font-medium text-gray-800 mb-3">{cartItems[0].restaurantName}</h4>
-                
+                <h4 className="font-medium text-gray-800 mb-3">{items[0].restaurantName}</h4>
+
                 <div className="space-y-4">
-                  {cartItems.map((item) => (
+                  {items.map((item) => (
                     <div key={item.id} className="flex items-center">
                       <div className="flex items-center mr-2">
                         <button 
@@ -116,8 +116,8 @@ export default function CartSidebar() {
             </div>
           )}
         </div>
-        
-        {cartItems.length > 0 && (
+
+        {items.length > 0 && (
           <div className="p-4 border-t border-gray-200">
             <div className="space-y-2 mb-4">
               <div className="flex justify-between items-center">
@@ -133,12 +133,12 @@ export default function CartSidebar() {
                 <span className="font-medium text-gray-800">${tax}</span>
               </div>
             </div>
-            
+
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-medium text-gray-800">Total</span>
               <span className="text-lg font-bold text-gray-800">${cartTotal}</span>
             </div>
-            
+
             <Button 
               className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 h-auto"
               onClick={handleCheckout}
