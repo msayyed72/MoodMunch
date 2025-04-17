@@ -14,7 +14,7 @@ export interface CartItem {
   restaurantName: string;
 }
 
-export interface CartContextType {
+interface CartContextType {
   items: CartItem[];
   addItem: (item: CartItem) => void;
   removeItem: (itemId: number) => void;
@@ -25,12 +25,16 @@ export interface CartContextType {
   getTotal: () => number;
   getTaxes: () => number;
   getDeliveryFee: () => number;
+  isCartOpen: boolean;
+  toggleCart: () => void;
+  closeCart: () => void;
 }
 
-export const CartContext = createContext<CartContextType | null>(null);
+const CartContext = createContext<CartContextType | null>(null);
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const TAX_RATE = 0.08;
   const BASE_DELIVERY_FEE = 2.99;
 
@@ -91,6 +95,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return getSubtotal() + getTaxes() + getDeliveryFee();
   };
 
+  const toggleCart = () => setIsCartOpen(prev => !prev);
+  const closeCart = () => setIsCartOpen(false);
+
   return (
     <CartContext.Provider value={{
       items,
@@ -102,12 +109,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getSubtotal,
       getTotal,
       getTaxes,
-      getDeliveryFee
+      getDeliveryFee,
+      isCartOpen,
+      toggleCart,
+      closeCart
     }}>
       {children}
     </CartContext.Provider>
   );
-};
+}
 
 export function useCart() {
   const context = useContext(CartContext);
