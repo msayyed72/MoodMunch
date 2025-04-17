@@ -22,7 +22,7 @@ import CheckoutPage from "./pages/checkout-page";
 import OrderSuccessPage from "./pages/order-success-page";
 import AdminDashboard from "./pages/admin/dashboard";
 import NotFound from "./pages/not-found";
-import ProtectedRoute from "./lib/protected-route";
+import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
