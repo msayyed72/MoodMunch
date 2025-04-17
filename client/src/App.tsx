@@ -1,25 +1,28 @@
+
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Switch, Route } from "wouter";
-import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/not-found";
-import HomePage from "@/pages/home-page";
-import AuthPage from "@/pages/auth-page";
-import FoodRecommendationPage from "@/pages/food-recommendation-page";
-import RestaurantListPage from "@/pages/restaurant-list-page";
-import RestaurantMenuPage from "@/pages/restaurant-menu-page";
-import CheckoutPage from "@/pages/checkout-page";
-import OrderSuccessPage from "@/pages/order-success-page";
-import AdminDashboard from "@/pages/admin/dashboard";
-import { ProtectedRoute } from "./lib/protected-route";
+import { queryClient } from "./lib/queryClient";
+import { AuthProvider } from "./hooks/use-auth";
+import { LocationProvider } from "./context/LocationContext";
+import { MoodProvider } from "./context/MoodContext";
+import { CartProvider } from "./context/CartContext";
+import { Toaster } from "./components/ui/toaster";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import MobileNav from "./components/layout/MobileNav";
 import CartSidebar from "./components/cart/CartSidebar";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { AuthProvider } from "./hooks/use-auth";
-import { MoodProvider } from "./context/MoodContext";
-import { CartProvider } from "./context/CartContext";
-import { LocationProvider } from "./context/LocationContext";
+
+// Pages
+import HomePage from "./pages/home-page";
+import AuthPage from "./pages/auth-page";
+import FoodRecommendationPage from "./pages/food-recommendation-page";
+import RestaurantListPage from "./pages/restaurant-list-page";
+import RestaurantMenuPage from "./pages/restaurant-menu-page";
+import CheckoutPage from "./pages/checkout-page";
+import OrderSuccessPage from "./pages/order-success-page";
+import AdminDashboard from "./pages/admin/dashboard";
+import NotFound from "./pages/not-found";
+import ProtectedRoute from "./lib/protected-route";
 
 function Router() {
   return (

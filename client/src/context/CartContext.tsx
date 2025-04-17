@@ -1,70 +1,51 @@
+import { createContext, useContext, useState } from "react";
+import { MenuItem } from "@shared/schema";
 
-import { createContext, ReactNode, useContext, useState } from "react";
-
-export interface CartItem {
-  id: number;
-  menuItemId: number;
-  name: string;
-  description: string;
-  price: string;
+interface CartItem extends MenuItem {
   quantity: number;
-  specialInstructions?: string;
-  customizations?: Record<string, string>;
-  restaurantId: number;
-  restaurantName: string;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (itemId: number) => void;
+  addToCart: (item: MenuItem) => void;
+  removeFromCart: (itemId: number) => void;
   updateQuantity: (itemId: number, quantity: number) => void;
-  updateInstructions: (itemId: number, instructions: string) => void;
   clearCart: () => void;
-  getSubtotal: () => number;
-  getTotal: () => number;
-  getTaxes: () => number;
-  getDeliveryFee: () => number;
-  isCartOpen: boolean;
+  isOpen: boolean;
   toggleCart: () => void;
-  closeCart: () => void;
 }
 
-const CartContext = createContext<CartContextType | null>(null);
+const CartContext = createContext<CartContextType>({
+  items: [],
+  addToCart: () => {},
+  removeFromCart: () => {},
+  updateQuantity: () => {},
+  clearCart: () => {},
+  isOpen: false,
+  toggleCart: () => {},
+});
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const TAX_RATE = 0.08;
-  const BASE_DELIVERY_FEE = 2.99;
+  const [isOpen, setIsOpen] = useState(false);
 
-  if (!items) {
-    setItems([]);
-  }
-
-  const addItem = (item: CartItem) => {
+  const addToCart = (item: MenuItem) => {
     setItems(prev => {
-      const existingItem = prev.find(i => i.menuItemId === item.menuItemId);
-      if (existingItem) {
+      const existing = prev.find(i => i.id === item.id);
+      if (existing) {
         return prev.map(i => 
-          i.menuItemId === item.menuItemId 
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
+          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
-      return [...prev, item];
+      return [...prev, { ...item, quantity: 1 }];
     });
   };
 
-  const removeItem = (itemId: number) => {
+  const removeFromCart = (itemId: number) => {
     setItems(prev => prev.filter(item => item.id !== itemId));
   };
 
   const updateQuantity = (itemId: number, quantity: number) => {
-    if (quantity < 1) {
-      removeItem(itemId);
-      return;
-    }
     setItems(prev => 
       prev.map(item => 
         item.id === itemId ? { ...item, quantity } : item
@@ -72,51 +53,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const updateInstructions = (itemId: number, instructions: string) => {
-    setItems(prev => 
-      prev.map(item => 
-        item.id === itemId ? { ...item, specialInstructions: instructions } : item
-      )
-    );
+  const clearCart = () => {
+    setItems([]);
   };
 
-  const clearCart = () => setItems([]);
-
-  const getSubtotal = () => {
-    return items.reduce((sum, item) => 
-      sum + parseFloat(item.price) * item.quantity, 0
-    );
+  const toggleCart = () => {
+    setIsOpen(prev => !prev);
   };
-
-  const getTaxes = () => getSubtotal() * TAX_RATE;
-
-  const getDeliveryFee = () => {
-    const subtotal = getSubtotal();
-    return subtotal > 30 ? 0 : BASE_DELIVERY_FEE;
-  };
-
-  const getTotal = () => {
-    return getSubtotal() + getTaxes() + getDeliveryFee();
-  };
-
-  const toggleCart = () => setIsCartOpen(prev => !prev);
-  const closeCart = () => setIsCartOpen(false);
 
   return (
     <CartContext.Provider value={{
       items,
-      addItem,
-      removeItem,
+      addToCart,
+      removeFromCart,
       updateQuantity,
-      updateInstructions,
       clearCart,
-      getSubtotal,
-      getTotal,
-      getTaxes,
-      getDeliveryFee,
-      isCartOpen,
+      isOpen,
       toggleCart,
-      closeCart
     }}>
       {children}
     </CartContext.Provider>
