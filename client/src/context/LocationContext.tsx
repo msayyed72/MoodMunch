@@ -68,11 +68,8 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
   const detectLocation = async () => {
     setIsLocating(true);
     try {
-      // In a real app, we would use geolocation API and reverse geocoding
-      // For this demo, we'll simulate location detection with a timeout
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Randomly select a country for demo purposes
       const countries = Object.keys(countryCurrencyMap);
       const randomCountry = countries[Math.floor(Math.random() * countries.length)];
       const { currency, symbol } = countryCurrencyMap[randomCountry];
