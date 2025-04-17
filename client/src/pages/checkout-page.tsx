@@ -1,7 +1,8 @@
-import { useLocation } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { useLocation as useWouterLocation } from "wouter";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "@/context/LocationContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,9 +38,11 @@ const deliveryInfoSchema = z.object({
 type DeliveryInfoValues = z.infer<typeof deliveryInfoSchema>;
 
 export default function CheckoutPage() {
-  const [, navigate] = useLocation();
+  const [, navigate] = useWouterLocation();
   const { cartItems, cartSubtotal, deliveryFee, tax, cartTotal, currentRestaurantId, clearCart } = useCart();
   const { user } = useAuth();
+  const locationContext = useLocation();
+  const { formatPrice, userLocation } = locationContext;
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -54,7 +57,7 @@ export default function CheckoutPage() {
       name: user?.name || "",
       phone: "",
       address: "",
-      city: "",
+      city: userLocation.city || "",
       state: "",
       zip: "",
       instructions: "",
@@ -115,7 +118,13 @@ export default function CheckoutPage() {
         <div className="lg:w-2/3">
           <Card className="bg-white rounded-xl shadow-sm mb-6">
             <CardContent className="p-5">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Delivery Information</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-800">Delivery Information</h3>
+                <div className="flex items-center text-sm text-gray-600">
+                  <MapPin className="h-4 w-4 mr-1 text-primary" />
+                  <span>Deliver to: {userLocation.city}, {userLocation.country}</span>
+                </div>
+              </div>
               
               <Form {...form}>
                 <form className="space-y-4">
@@ -231,7 +240,12 @@ export default function CheckoutPage() {
           
           <Card className="bg-white rounded-xl shadow-sm mb-6">
             <CardContent className="p-5">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Payment Method</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-800">Payment Method</h3>
+                <div className="text-sm text-gray-600 font-medium">
+                  Paying in {userLocation.currencySymbol} ({userLocation.currency})
+                </div>
+              </div>
               
               <Form {...form}>
                 <FormField
@@ -292,7 +306,7 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <span className="font-medium text-gray-800">
-                        ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                        {formatPrice((parseFloat(item.price) * item.quantity).toString())}
                       </span>
                     </div>
                   ))}
@@ -302,21 +316,21 @@ export default function CheckoutPage() {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Subtotal</span>
-                  <span className="font-medium text-gray-800">${cartSubtotal}</span>
+                  <span className="font-medium text-gray-800">{formatPrice(cartSubtotal)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Delivery Fee</span>
-                  <span className="font-medium text-gray-800">${deliveryFee}</span>
+                  <span className="font-medium text-gray-800">{formatPrice(deliveryFee)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Tax</span>
-                  <span className="font-medium text-gray-800">${tax}</span>
+                  <span className="font-medium text-gray-800">{formatPrice(tax)}</span>
                 </div>
               </div>
               
               <div className="flex justify-between items-center border-t border-gray-200 pt-4 mb-6">
                 <span className="text-lg font-medium text-gray-800">Total</span>
-                <span className="text-lg font-bold text-gray-800">${cartTotal}</span>
+                <span className="text-lg font-bold text-gray-800">{formatPrice(cartTotal)}</span>
               </div>
               
               <Button 
