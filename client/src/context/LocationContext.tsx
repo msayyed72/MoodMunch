@@ -54,7 +54,7 @@ const countryCurrencyMap: Record<string, { currency: string; symbol: string }> =
   "Spain": { currency: "EUR", symbol: "€" },
 };
 
-export function LocationProvider({ children }: { children: ReactNode }) {
+export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [userLocation, setUserLocation] = useState<Location>(defaultLocation);
   const [isLocating, setIsLocating] = useState(false);
 
@@ -123,7 +123,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       {children}
     </LocationContext.Provider>
   );
-}
+};
 
 export function useLocation() {
   const context = useContext(LocationContext);
