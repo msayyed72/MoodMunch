@@ -19,6 +19,7 @@ import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "./hooks/use-auth";
 import { MoodProvider } from "./context/MoodContext";
 import { CartProvider } from "./context/CartContext";
+import { LocationProvider } from "./context/LocationContext";
 
 function Router() {
   return (
@@ -40,20 +41,22 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <MoodProvider>
-          <CartProvider>
-            <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-grow">
-                <Router />
-              </main>
-              <Footer />
-              <MobileNav />
-              <CartSidebar />
-              <Toaster />
-            </div>
-          </CartProvider>
-        </MoodProvider>
+        <LocationProvider>
+          <MoodProvider>
+            <CartProvider>
+              <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex-grow">
+                  <Router />
+                </main>
+                <Footer />
+                <MobileNav />
+                <CartSidebar />
+                <Toaster />
+              </div>
+            </CartProvider>
+          </MoodProvider>
+        </LocationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

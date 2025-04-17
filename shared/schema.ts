@@ -79,6 +79,12 @@ export const insertRestaurantSchema = createInsertSchema(restaurants).pick({
   deliveryTime: true,
   deliveryFee: true,
   cuisines: true,
+  country: true,
+  city: true,
+  currency: true,
+  currencySymbol: true,
+  latitude: true,
+  longitude: true,
 });
 
 // Restaurant-Food junction table
