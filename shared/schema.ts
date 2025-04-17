@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users table
 export const users = pgTable("users", {
@@ -184,3 +185,68 @@ export interface CartItem {
   restaurantId: number;
   restaurantName: string;
 }
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  orders: many(orders),
+}));
+
+export const moodsRelations = relations(moods, ({ many }) => ({
+  foods: many(foods),
+}));
+
+export const foodsRelations = relations(foods, ({ one, many }) => ({
+  mood: one(moods, {
+    fields: [foods.moodId],
+    references: [moods.id],
+  }),
+  restaurantFoods: many(restaurantFoods),
+}));
+
+export const restaurantsRelations = relations(restaurants, ({ many }) => ({
+  menuItems: many(menuItems),
+  restaurantFoods: many(restaurantFoods),
+  orders: many(orders),
+}));
+
+export const restaurantFoodsRelations = relations(restaurantFoods, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [restaurantFoods.restaurantId],
+    references: [restaurants.id],
+  }),
+  food: one(foods, {
+    fields: [restaurantFoods.foodId],
+    references: [foods.id],
+  }),
+}));
+
+export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
+  restaurant: one(restaurants, {
+    fields: [menuItems.restaurantId],
+    references: [restaurants.id],
+  }),
+  orderItems: many(orderItems),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+  restaurant: one(restaurants, {
+    fields: [orders.restaurantId],
+    references: [restaurants.id],
+  }),
+  orderItems: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  menuItem: one(menuItems, {
+    fields: [orderItems.menuItemId],
+    references: [menuItems.id],
+  }),
+}));

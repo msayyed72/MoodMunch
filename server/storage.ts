@@ -1,6 +1,12 @@
-import { users, type User, type InsertUser, Mood, Food, Restaurant, MenuItem, Order, InsertOrder, OrderItem, InsertOrderItem, RestaurantFood } from "@shared/schema";
-import createMemoryStore from "memorystore";
+import { users, moods, foods, restaurants, restaurantFoods, menuItems, orders, orderItems, type User, type InsertUser, type Mood, type Food, type Restaurant, type MenuItem, type Order, type InsertOrder, type OrderItem, type InsertOrderItem, type RestaurantFood } from "@shared/schema";
 import session from "express-session";
+import { db } from "./db";
+import { eq, and, or } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
+import createMemoryStore from "memorystore";
+
+type SessionStore = session.Store;
 
 // modify the interface with any CRUD methods
 // you might need
@@ -44,7 +50,7 @@ export interface IStorage {
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 }
 
 export class MemStorage implements IStorage {
@@ -653,4 +659,142 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.SessionStore;
+
+  constructor() {
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
+    });
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  // Mood methods
+  async getAllMoods(): Promise<Mood[]> {
+    return db.select().from(moods);
+  }
+
+  async getMood(id: number): Promise<Mood | undefined> {
+    const [mood] = await db.select().from(moods).where(eq(moods.id, id));
+    return mood;
+  }
+
+  // Food methods
+  async getAllFoods(): Promise<Food[]> {
+    return db.select().from(foods);
+  }
+
+  async getFood(id: number): Promise<Food | undefined> {
+    const [food] = await db.select().from(foods).where(eq(foods.id, id));
+    return food;
+  }
+
+  async getFoodsByMood(moodId: number): Promise<Food[]> {
+    return db.select().from(foods).where(eq(foods.moodId, moodId));
+  }
+
+  // Restaurant methods
+  async getAllRestaurants(): Promise<Restaurant[]> {
+    return db.select().from(restaurants);
+  }
+
+  async getRestaurant(id: number): Promise<Restaurant | undefined> {
+    const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.id, id));
+    return restaurant;
+  }
+
+  async getRestaurantsByFood(foodId: number): Promise<Restaurant[]> {
+    const restaurantFoodPairs = await db.select()
+      .from(restaurantFoods)
+      .where(eq(restaurantFoods.foodId, foodId));
+    
+    const restaurantIds = restaurantFoodPairs.map(pair => pair.restaurantId);
+    
+    if (restaurantIds.length === 0) {
+      return [];
+    }
+    
+    return db.select()
+      .from(restaurants)
+      .where(
+        restaurantIds.map(id => eq(restaurants.id, id)).reduce((a, b) => ({ ...a, or: b }))
+      );
+  }
+
+  // Restaurant-Food junction methods
+  async getRestaurantFoods(): Promise<RestaurantFood[]> {
+    return db.select().from(restaurantFoods);
+  }
+
+  // Menu items methods
+  async getAllMenuItems(): Promise<MenuItem[]> {
+    return db.select().from(menuItems);
+  }
+
+  async getMenuItem(id: number): Promise<MenuItem | undefined> {
+    const [menuItem] = await db.select().from(menuItems).where(eq(menuItems.id, id));
+    return menuItem;
+  }
+
+  async getMenuItems(restaurantId: number): Promise<MenuItem[]> {
+    return db.select().from(menuItems).where(eq(menuItems.restaurantId, restaurantId));
+  }
+
+  // Order methods
+  async createOrder(order: Omit<InsertOrder, "createdAt">): Promise<Order> {
+    const [newOrder] = await db.insert(orders).values(order).returning();
+    return newOrder;
+  }
+
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
+  async getOrdersByUser(userId: number): Promise<Order[]> {
+    return db.select()
+      .from(orders)
+      .where(eq(orders.userId, userId))
+      .orderBy(orders.createdAt, 'desc');
+  }
+
+  async getLatestOrderByUser(userId: number): Promise<Order | undefined> {
+    const [order] = await db.select()
+      .from(orders)
+      .where(eq(orders.userId, userId))
+      .orderBy(orders.createdAt, 'desc')
+      .limit(1);
+    
+    return order;
+  }
+
+  // Order items methods
+  async addOrderItem(item: InsertOrderItem): Promise<OrderItem> {
+    const [orderItem] = await db.insert(orderItems).values(item).returning();
+    return orderItem;
+  }
+
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+}
+
+// Export database storage instance
+export const storage = new DatabaseStorage();
