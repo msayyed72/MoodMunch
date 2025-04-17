@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function MobileNav() {
   const [location, navigate] = useLocation();
-  const { cartItems, toggleCart } = useCart();
+  const { items: cartItems, toggleCart } = useCart();
   const { user } = useAuth();
   
   return (
