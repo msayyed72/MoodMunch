@@ -4,8 +4,17 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import { insertOrderSchema } from "@shared/schema";
+import { seedDatabase } from "./seed-db";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Seed the database with initial data
+  try {
+    await seedDatabase();
+    console.log('Database seed completed successfully');
+  } catch (error) {
+    console.error('Error seeding database:', error);
+  }
+  
   // Set up authentication routes
   setupAuth(app);
 

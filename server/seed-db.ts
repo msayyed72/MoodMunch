@@ -312,13 +312,3 @@ async function seedDatabase() {
 
 // Export the seed function so it can be called from other files
 export { seedDatabase };
-
-// If this file is run directly, execute the seed function
-if (require.main === module) {
-  seedDatabase()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("Error seeding database:", error);
-      process.exit(1);
-    });
-}
