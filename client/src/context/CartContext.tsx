@@ -1,175 +1,112 @@
 import { createContext, ReactNode, useContext, useState } from "react";
-import { CartItem } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
 
-interface CartContextType {
-  cartItems: CartItem[];
-  addToCart: (item: Omit<CartItem, "id" | "quantity">) => void;
-  removeFromCart: (itemId: number) => void;
-  incrementItem: (itemId: number) => void;
-  decrementItem: (itemId: number) => void;
+export interface CartItem {
+  id: number;
+  menuItemId: number;
+  name: string;
+  description: string;
+  price: string;
+  quantity: number;
+  specialInstructions?: string;
+  customizations?: Record<string, string>;
+  restaurantId: number;
+  restaurantName: string;
+}
+
+export interface CartContextType {
+  items: CartItem[];
+  addItem: (item: CartItem) => void;
+  removeItem: (itemId: number) => void;
+  updateQuantity: (itemId: number, quantity: number) => void;
+  updateInstructions: (itemId: number, instructions: string) => void;
   clearCart: () => void;
-  cartSubtotal: string;
-  deliveryFee: string;
-  tax: string;
-  cartTotal: string;
-  isCartOpen: boolean;
-  toggleCart: () => void;
-  closeCart: () => void;
-  openCart: () => void;
-  currentRestaurantId: number | null;
+  getSubtotal: () => number;
+  getTotal: () => number;
+  getTaxes: () => number;
+  getDeliveryFee: () => number;
 }
 
 export const CartContext = createContext<CartContextType | null>(null);
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [currentRestaurantId, setCurrentRestaurantId] = useState<number | null>(null);
-  const { toast } = useToast();
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const TAX_RATE = 0.08;
+  const BASE_DELIVERY_FEE = 2.99;
 
-  const calculateCartSubtotal = (): string => {
-    const subtotal = cartItems.reduce(
-      (sum, item) => sum + parseFloat(item.price) * item.quantity,
-      0
-    );
-    return subtotal.toFixed(2);
+  const addItem = (item: CartItem) => {
+    setItems(prev => {
+      const existingItem = prev.find(i => i.menuItemId === item.menuItemId);
+      if (existingItem) {
+        return prev.map(i => 
+          i.menuItemId === item.menuItemId 
+            ? { ...i, quantity: i.quantity + item.quantity }
+            : i
+        );
+      }
+      return [...prev, item];
+    });
   };
 
-  const cartSubtotal = calculateCartSubtotal();
-  const deliveryFee = cartItems.length > 0 ? "2.99" : "0.00";
-  const tax = (parseFloat(cartSubtotal) * 0.1).toFixed(2);
-  const cartTotal = (
-    parseFloat(cartSubtotal) +
-    parseFloat(deliveryFee) +
-    parseFloat(tax)
-  ).toFixed(2);
-
-  const toggleCart = () => {
-    setIsCartOpen(!isCartOpen);
+  const removeItem = (itemId: number) => {
+    setItems(prev => prev.filter(item => item.id !== itemId));
   };
 
-  const closeCart = () => {
-    setIsCartOpen(false);
-  };
-
-  const openCart = () => {
-    setIsCartOpen(true);
-  };
-
-  const addToCart = (newItem: Omit<CartItem, "id" | "quantity">) => {
-    // If trying to add an item from a different restaurant, show warning
-    if (cartItems.length > 0 && currentRestaurantId !== newItem.restaurantId) {
-      toast({
-        variant: "destructive",
-        title: "Items from different restaurants",
-        description: "Your cart contains items from a different restaurant. Would you like to clear your cart and add this item?",
-        action: (
-          <button
-            className="rounded bg-white text-primary font-medium py-1 px-3"
-            onClick={() => {
-              setCartItems([{...newItem, id: 1, quantity: 1}]);
-              setCurrentRestaurantId(newItem.restaurantId);
-              openCart();
-            }}
-          >
-            Clear & Add
-          </button>
-        ),
-      });
+  const updateQuantity = (itemId: number, quantity: number) => {
+    if (quantity < 1) {
+      removeItem(itemId);
       return;
     }
-
-    setCartItems((prev) => {
-      const existingItemIndex = prev.findIndex(
-        (item) => item.menuItemId === newItem.menuItemId
-      );
-
-      if (existingItemIndex !== -1) {
-        // If item already exists, increment quantity
-        const updatedItems = [...prev];
-        updatedItems[existingItemIndex].quantity += 1;
-        return updatedItems;
-      } else {
-        // If adding first item, set the current restaurant
-        if (prev.length === 0) {
-          setCurrentRestaurantId(newItem.restaurantId);
-        }
-        // Add new item with id and quantity
-        const newId = prev.length > 0 ? Math.max(...prev.map(item => item.id)) + 1 : 1;
-        return [...prev, { ...newItem, id: newId, quantity: 1 }];
-      }
-    });
-
-    toast({
-      title: "Item added to cart",
-      description: `${newItem.name} has been added to your cart.`,
-    });
-
-    openCart();
-  };
-
-  const removeFromCart = (itemId: number) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
-    
-    // If removing last item, clear current restaurant
-    if (cartItems.length === 1) {
-      setCurrentRestaurantId(null);
-    }
-  };
-
-  const incrementItem = (itemId: number) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+    setItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, quantity } : item
       )
     );
   };
 
-  const decrementItem = (itemId: number) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      ).filter((item) => !(item.id === itemId && item.quantity === 1))
+  const updateInstructions = (itemId: number, instructions: string) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, specialInstructions: instructions } : item
+      )
     );
-    
-    // If removing last item, clear current restaurant
-    if (cartItems.length === 1 && cartItems[0].id === itemId && cartItems[0].quantity === 1) {
-      setCurrentRestaurantId(null);
-    }
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-    setCurrentRestaurantId(null);
+  const clearCart = () => setItems([]);
+
+  const getSubtotal = () => {
+    return items.reduce((sum, item) => 
+      sum + parseFloat(item.price) * item.quantity, 0
+    );
+  };
+
+  const getTaxes = () => getSubtotal() * TAX_RATE;
+
+  const getDeliveryFee = () => {
+    const subtotal = getSubtotal();
+    return subtotal > 30 ? 0 : BASE_DELIVERY_FEE;
+  };
+
+  const getTotal = () => {
+    return getSubtotal() + getTaxes() + getDeliveryFee();
   };
 
   return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        addToCart,
-        removeFromCart,
-        incrementItem,
-        decrementItem,
-        clearCart,
-        cartSubtotal,
-        deliveryFee,
-        tax,
-        cartTotal,
-        isCartOpen,
-        toggleCart,
-        closeCart,
-        openCart,
-        currentRestaurantId,
-      }}
-    >
+    <CartContext.Provider value={{
+      items,
+      addItem,
+      removeItem,
+      updateQuantity,
+      updateInstructions,
+      clearCart,
+      getSubtotal,
+      getTotal,
+      getTaxes,
+      getDeliveryFee
+    }}>
       {children}
     </CartContext.Provider>
   );
-}
+};
 
 export function useCart() {
   const context = useContext(CartContext);

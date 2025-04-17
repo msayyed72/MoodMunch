@@ -39,6 +39,63 @@ const currencyExchangeRates: Record<string, number> = {
   CNY: 7.23,
 };
 
+export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [userLocation, setUserLocation] = useState<Location>(defaultLocation);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const detectLocation = async () => {
+    setIsLocating(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+
+      const { latitude, longitude } = position.coords;
+      const response = await fetch(
+        `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY`
+      );
+      const data = await response.json();
+      
+      if (data.results && data.results[0]) {
+        const result = data.results[0].components;
+        setUserLocation({
+          country: result.country || defaultLocation.country,
+          city: result.city || defaultLocation.city,
+          latitude,
+          longitude,
+          currency: getCurrencyByCountry(result.country_code) || defaultLocation.currency,
+          currencySymbol: getCurrencySymbol(result.country_code) || defaultLocation.currencySymbol
+        });
+      }
+    } catch (error) {
+      console.error('Error detecting location:', error);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const formatPrice = (price: string | number): string => {
+    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    const convertedPrice = numericPrice * (currencyExchangeRates[userLocation.currency] || 1);
+    return new Intl.NumberFormat(navigator.language, {
+      style: 'currency',
+      currency: userLocation.currency
+    }).format(convertedPrice);
+  };
+
+  return (
+    <LocationContext.Provider value={{
+      userLocation,
+      setUserLocation: (location) => setUserLocation({ ...userLocation, ...location }),
+      isLocating,
+      detectLocation,
+      formatPrice
+    }}>
+      {children}
+    </LocationContext.Provider>
+  );
+};
+
 const countryCurrencyMap: Record<string, { currency: string; symbol: string }> = {
   "United States": { currency: "USD", symbol: "$" },
   "United Kingdom": { currency: "GBP", symbol: "£" },
