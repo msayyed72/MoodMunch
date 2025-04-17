@@ -1,4 +1,3 @@
-
 import { createContext, ReactNode, useState, useEffect, useContext } from "react";
 
 interface Location {
@@ -40,6 +39,63 @@ const currencyExchangeRates: Record<string, number> = {
   CNY: 7.23,
 };
 
+export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [userLocation, setUserLocation] = useState<Location>(defaultLocation);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const detectLocation = async () => {
+    setIsLocating(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+
+      const { latitude, longitude } = position.coords;
+      const response = await fetch(
+        `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY`
+      );
+      const data = await response.json();
+      
+      if (data.results && data.results[0]) {
+        const result = data.results[0].components;
+        setUserLocation({
+          country: result.country || defaultLocation.country,
+          city: result.city || defaultLocation.city,
+          latitude,
+          longitude,
+          currency: getCurrencyByCountry(result.country_code) || defaultLocation.currency,
+          currencySymbol: getCurrencySymbol(result.country_code) || defaultLocation.currencySymbol
+        });
+      }
+    } catch (error) {
+      console.error('Error detecting location:', error);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const formatPrice = (price: string | number): string => {
+    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    const convertedPrice = numericPrice * (currencyExchangeRates[userLocation.currency] || 1);
+    return new Intl.NumberFormat(navigator.language, {
+      style: 'currency',
+      currency: userLocation.currency
+    }).format(convertedPrice);
+  };
+
+  return (
+    <LocationContext.Provider value={{
+      userLocation,
+      setUserLocation: (location) => setUserLocation({ ...userLocation, ...location }),
+      isLocating,
+      detectLocation,
+      formatPrice
+    }}>
+      {children}
+    </LocationContext.Provider>
+  );
+};
+
 const countryCurrencyMap: Record<string, { currency: string; symbol: string }> = {
   "United States": { currency: "USD", symbol: "$" },
   "United Kingdom": { currency: "GBP", symbol: "£" },
@@ -54,7 +110,7 @@ const countryCurrencyMap: Record<string, { currency: string; symbol: string }> =
   "Spain": { currency: "EUR", symbol: "€" },
 };
 
-export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function LocationProvider({ children }: { children: ReactNode }) {
   const [userLocation, setUserLocation] = useState<Location>(defaultLocation);
   const [isLocating, setIsLocating] = useState(false);
 
@@ -68,8 +124,11 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
   const detectLocation = async () => {
     setIsLocating(true);
     try {
+      // In a real app, we would use geolocation API and reverse geocoding
+      // For this demo, we'll simulate location detection with a timeout
       await new Promise(resolve => setTimeout(resolve, 1500));
       
+      // Randomly select a country for demo purposes
       const countries = Object.keys(countryCurrencyMap);
       const randomCountry = countries[Math.floor(Math.random() * countries.length)];
       const { currency, symbol } = countryCurrencyMap[randomCountry];
@@ -95,6 +154,7 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  // Convert price from USD to user's local currency
   const formatPrice = (price: string | number): string => {
     const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/[^0-9.]/g, '')) : price;
     
@@ -103,6 +163,7 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
     const exchangeRate = currencyExchangeRates[userLocation.currency] || 1;
     const convertedPrice = numericPrice * exchangeRate;
     
+    // Format based on currency
     if (userLocation.currency === 'JPY' || userLocation.currency === 'CNY') {
       return `${userLocation.currencySymbol}${Math.round(convertedPrice)}`;
     } else {
@@ -123,7 +184,7 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
       {children}
     </LocationContext.Provider>
   );
-};
+}
 
 export function useLocation() {
   const context = useContext(LocationContext);
