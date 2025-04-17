@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  role: text("role").default("user"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -17,6 +18,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   name: true,
   email: true,
+  role: true,
 });
 
 // Moods table
@@ -60,6 +62,12 @@ export const restaurants = pgTable("restaurants", {
   deliveryTime: text("delivery_time").notNull(),
   deliveryFee: text("delivery_fee").notNull(),
   cuisines: text("cuisines").array().notNull(),
+  country: text("country").default("United States"),
+  city: text("city").default("New York"),
+  currency: text("currency").default("USD"),
+  currencySymbol: text("currency_symbol").default("$"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).pick({

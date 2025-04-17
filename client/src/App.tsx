@@ -8,6 +8,7 @@ import RestaurantListPage from "@/pages/restaurant-list-page";
 import RestaurantMenuPage from "@/pages/restaurant-menu-page";
 import CheckoutPage from "@/pages/checkout-page";
 import OrderSuccessPage from "@/pages/order-success-page";
+import AdminDashboard from "@/pages/admin/dashboard";
 import { ProtectedRoute } from "./lib/protected-route";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/restaurant/:id" component={RestaurantMenuPage} />
       <ProtectedRoute path="/checkout" component={CheckoutPage} />
       <ProtectedRoute path="/order-success" component={OrderSuccessPage} />
+      <ProtectedRoute path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
